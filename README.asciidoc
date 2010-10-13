@@ -1,0 +1,123 @@
+Bigdude
+=======
+
+Overview
+--------
+Use this application to refine your skills with:
+
+* `strace`
+* Linux huge pages
+* `mmap2(2)`
+
+Background
+----------
+This application is based on the demo source
+shipped with the kernel documentation in 
+`Documentation/vm/huge*`.
+
+Procedures
+----------
+Follow these steps as a demo of configuring a Linux
+host to use hugepages with `mmap`.
+
+. Install `bigdude` binary in a reasonable location,
+  such as `/usr/bin`
+
+. Use `strace bigdude` to run the program, which should
+fail with the following snippet of output:
++
+----
+open("/myhugefs/hugepagefile", O_RDWR|O_CREAT, 0755) = -1 ENOENT (No such file or directory)
+dup(2)                                  = 3
+fcntl(3, F_GETFL)                       = 0x8402 (flags O_RDWR|O_APPEND|O_LARGEFILE)
+brk(0)                                  = 0x7cc000
+brk(0x7ed000)                           = 0x7ed000
+fstat(3, {st_mode=S_IFCHR|0620, st_rdev=makedev(136, 2), ...}) = 0
+mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7fe90e9bf000
+lseek(3, 0, SEEK_CUR)                   = -1 ESPIPE (Illegal seek)
+write(3, "Open failed: No such file or dir"..., 39Open failed: No such file or directory
+) = 39
+close(3)                                = 0
+munmap(0x7fe90e9bf000, 4096)            = 0
+exit_group(1)                           = ?
+----
++
+The output shows that `bigdude` is trying to create a file at `/myhugefs/hugepagefile`.
+
+. As `root`, create the directory `/myhugefs`
+.. Create the directory:
++
+----
+sudo mkdir /myhugefs
+----
+
+.. Assign permissions:
++
+----
+sudo chmod 777 /myhugefs
+----
++
+WARNING: This demo permission is unsafe for production usage.
+
+. Try the test again
+.. Re-run `strace bigdude`, at which point you should see these errors:
++
+----
+open("/myhugefs/hugepagefile", O_RDWR|O_CREAT, 0755) = 3
+mmap(NULL, 134217728, PROT_READ|PROT_WRITE, MAP_SHARED, 3, 0) = 0x7f0cbb236000
+fstat(1, {st_mode=S_IFCHR|0620, st_rdev=makedev(136, 2), ...}) = 0
+mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f0cc3255000
+write(1, "Returned address is 0x7f0cbb2360"..., 35Returned address is 0x7f0cbb236000
+) = 35
+--- SIGBUS (Bus error) @ 0 (0) ---
++++ killed by SIGBUS (core dumped) +++
+Bus error (core dumped)
+----
+
+.. Review the `mmap(2)` man page, which describes the second argument
+as a size in Bytes. Digging further, `MAP_SHARED` indicates shared memory.
+At this point, nothing indicates the need for huge pages.
++
+NOTE: Beginning with Linux 2.6.32, `mmap` supports a `MAP_HUGETLB` flag.
+
+.. Review the kernel documentation `Documentation/vm/hugetlb*.txt`
+
+. The application, `bigdude`, is trying to create a region of shared memory
+that is 134217728 Bytes long. With normal 4 KiB pages, this would take an
+enormous number of page table entries (PTE) and can thrash the CPU TLB cache. 
+With huge pages, you can minimize the number of PTE required.
+
+.. Ensure your kernel supports `hugetlbfs`
++
+----
+grep huge /proc/filesystems
+----
+
+.. Mount a virtual filesystem:
++
+----
+mount -t hugetlbfs none /myhugefs
+----
+
+.. Run `grep -i huge /proc/meminfo` to determine the hugepage size on your system:
++
+----
+HugePages_Total:       0
+HugePages_Free:        0
+Hugepagesize:       2048 kB
+----
+
+.. Convert the needed size (134217728 Bytes) to the number of hugepages:
++
+----
+echo '134217728 / 2048 / 1024' | bc
+----
++
+This indicates you need 64 hugepages on this system.
+
+.. Run `sysctl -a | grep -i huge >> /etc/sysctl.conf`, then edit the file
+to use 64 hugepages.
+
+.. Run `sysctl -p` to reload settings
+
+. Run the test again (it should succeed): `strace bigdude`
