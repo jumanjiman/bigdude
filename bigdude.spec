@@ -43,6 +43,9 @@ chmod 755 bigdude
 %doc README.asciidoc
 
 %changelog
+* Wed Oct 13 2010 Paul Morgan <jumanjiman@gmail.com> 0.2-1
+- bump version to supercede previous package (jumanjiman@gmail.com)
+
 * Wed Oct 13 2010 Paul Morgan <jumanjiman@gmail.com> 0.1-1
 - repackaged for open distribution
 - added README.asciidoc with simple procedure
