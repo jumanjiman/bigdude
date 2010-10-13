@@ -2,7 +2,7 @@ name: bigdude
 summary: provides app to practice tlb optimization
 license: GPLv2
 
-version: 0.1
+version: 0.2
 release: 1%{?dist}
 
 group: Applications/Engineering
