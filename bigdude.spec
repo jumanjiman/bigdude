@@ -3,7 +3,7 @@ summary: provides app to practice tlb optimization
 license: GPLv2
 
 version: 0.2
-release: 1%{?dist}
+release: 2%{?dist}
 
 group: Applications/Engineering
 source: %{name}-%{version}.tar.gz
@@ -25,7 +25,6 @@ and hugetlbfs
 
 %build
 gcc src/hugedemo.c -o bigdude
-chmod 755 bigdude
 
 %install
 %{__rm} -fr %{buildroot}
