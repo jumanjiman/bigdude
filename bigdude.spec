@@ -42,6 +42,9 @@ gcc src/hugedemo.c -o bigdude
 %doc README.asciidoc
 
 %changelog
+* Thu Oct 14 2010 Paul Morgan <jumanjiman@gmail.com> 0.2-2
+- remove useless use of chmod (jumanjiman@gmail.com)
+
 * Wed Oct 13 2010 Paul Morgan <jumanjiman@gmail.com> 0.2-1
 - bump version to supercede previous package (jumanjiman@gmail.com)
 
